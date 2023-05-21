@@ -1,0 +1,99 @@
+# CircleCI 2.1 configuration file
+# Check https://circleci.com/docs/2.0/configuration-reference/ for more details
+#
+# Note: YAML anchors allow an object to be re-used, reducing duplication.
+# The ampersand declares an alias for an object, then later the `<<: *name`
+# syntax dereferences it.
+#
+# Define YAML anchors
+.global_environment_vars: &global_environment_vars
+  PROD_IMAGE_REPO: nextlinux/engine-cli
+  LATEST_RELEASE_MAJOR_VERSION: 0.8
+  TERM: xterm
+
+.attach_workspace: &attach_workspace
+  attach_workspace:
+    at: /home/circleci/workspace/
+
+.load_docker_image: &load_docker_image
+  run:
+    name: Load Docker image layer cache
+    command: |
+      docker load -i "/home/circleci/workspace/caches/${CIRCLE_SHA1}.tar" || true
+
+.ssh_forward_port: &ssh_forward_port
+  run:
+    name: Forward remote-docker ports for testing
+    command: |
+      ssh -MS nextlinux-api -fN4 -L 8228:localhost:8228 remote-docker
+      ssh -MS k8s-api -fN4 -L 32768:localhost:32768 remote-docker
+
+.authenticate_to_docker: &authenticate_to_docker
+  run:
+    name: Authenticate to Docker
+    command: |
+      echo "${DOCKER_PASS}" | docker login -u "${DOCKER_USER}" --password-stdin
+
+.only_main_branch: &only_main_branch
+  branches:
+    only:
+      - main
+
+
+# Start circleci configuration
+version: 2.1
+
+jobs:
+  test:
+    docker:
+      - image: cimg/python:3.8.4
+    environment: *global_environment_vars
+    steps:
+      - setup_remote_docker:
+          version: 20.10.7
+      - checkout
+      - run:
+          name: run tests
+          command: make test
+
+  lint:
+    docker:
+      - image: cimg/python:3.8.4
+    environment: *global_environment_vars
+    steps:
+      - setup_remote_docker:
+          version: 20.10.7
+      - checkout
+      - run:
+          name: lint Dockerfiles
+          command: make lint
+
+  push:
+    description: Uses make script to push images to DockerHub
+    docker:
+      - image: cimg/python:3.8.4
+    environment: *global_environment_vars
+    steps:
+      - setup_remote_docker:
+          version: 20.10.7
+      - checkout
+      - <<: *attach_workspace
+      - <<: *load_docker_image
+      - <<: *authenticate_to_docker
+      - run:
+          name: Push to Dockerhub
+          command: make push
+
+workflows:
+  default_workflow:
+    jobs:
+      - test
+      - lint
+
+  push_to_dockerhub:
+    jobs:
+      - push:
+          name: push_to_dockerhub
+          context: dockerhub
+          filters: *only_main_branch
+
