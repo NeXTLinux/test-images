@@ -1,0 +1,7 @@
+name: CI
+
+on: [pull_request]
+
+jobs:
+  call-external:
+    uses: nextlinux/workflows-hub/.github/workflows/ci.yml@master
