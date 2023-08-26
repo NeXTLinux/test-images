@@ -119,9 +119,9 @@ GEM
     multi_json (1.15.0)
     multi_xml (0.6.0)
     netrc (0.11.0)
-    nokogiri (1.13.8-aarch64-linux)
+    nokogiri (1.15.4-aarch64-linux)
       racc (~> 1.4)
-    nokogiri (1.13.8-x86_64-linux)
+    nokogiri (1.15.4-x86_64-linux)
       racc (~> 1.4)
     oauth (0.5.10)
     oauth2 (1.4.10)
@@ -144,7 +144,7 @@ GEM
       settingslogic
       thor
     public_suffix (4.0.7)
-    racc (1.6.0)
+    racc (1.7.1)
     rack (2.2.4)
     rake (13.0.6)
     rchardet (1.8.0)
@@ -229,7 +229,7 @@ DEPENDENCIES
   minio-ruby
   mongo
   netrc
-  nokogiri
+  nokogiri (= 1.15.4)
   openssl
   parallel
   parser
